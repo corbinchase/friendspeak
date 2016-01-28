@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block css %}
+{% endblock %}
+
+{% block body %}
+
+<script type='text/javascript' src="/static/js/fbDataRetrieval.js"></script>
+<div id="fb-root"></div>
+
+<br><br>
+  <div class="box">
+    <div class="modalboxpost">
+      <p class="whitetext">{{profileposts.profilepost}}</p>
+      <p class="textal">{{profileposts.timeremoved}} ago</p>
+      {% if profileposts.numcomments == 1 %}
+      <p class="commenticon">{{profileposts.numcomments}} comment</p>
+      {% else %}
+      <p class="commenticon">{{profileposts.numcomments}} comments</p>
+      {% endif %}
+ <!-- {% if user.username == profileposts.user1.username %}
+      <p class="textal"><img class="photo-post" src="/static/images/nick_prof.jpg">{{profileposts.timeremoved}} ago</p>
+      {% else %}
+      <p class="textal">{{profileposts.timeremoved}} ago</p>
+      {% endif %} -->
+    </div>
+    <div class="boxbuttons">
+      <div style="float:right;">
+        <center>
+          {% if like.color == 0 %}
+          <p style="margin:0;"><a href="/likeprofile/{{profileposts.id}}/"><img src="/static/images/0.png"></a></p>
+          {% else %}
+          <p style="margin:0;"><a href="/likeprofile/{{profileposts.id}}/"><img src="/static/images/1.png"></a></p>
+          {% endif %}
+          <p style="margin:0;color:#333333;">{{profileposts.likes}}</p>
+          {% if dislike.color == 10 %}
+          <p style="margin-top:-3px;margin-bottom:0;"><a href="/dislikeprofile/{{profileposts.id}}/"><img src="/static/images/10.png"></a></p>
+          {% else %}
+          <p style="margin-top:-3px;margin-bottom:0;"><a href="/dislikeprofile/{{profileposts.id}}/"><img src="/static/images/11.png"></a></p>
+          {% endif %}
+        </center>
+      </div>
+    </div>
+    <div class="separator_click_top"></div>
+    {% if profileposts.hascomments == True %}
+      <div class="clickcommentsbox">
+        {% for c in profilecomments %}
+          <div class="clickcomments">
+            <div class="commentident" style="display:table-cell;vertical-align:top;">
+              {% if user.username = c.user.username %}
+              <p style="margin-right:15px;"><img class="photo-comment" src="{{myprofileinfo.picture}}"></p>
+              {% else %}
+              <p style="margin-right:15px;"><img class="comment-icon" src="/static/images/comment.png"></p>
+              {% endif %}
+            </div>
+            <div class="commentpoop" style="display:inline-block;">
+              <p class="commentpost" style="display:inline-block;">{{c.profilecomment}}</p><br>
+              <p class="commentdate" style="display:inline-block;">{{c.timeremoved}} ago</p>
+            </div>
+          </div>
+          <div class="separator_click"></div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <center><p class="commenticon" style="margin-bottom:40px;margin-top:40px;">No comments yet!</p></center>
+      <div class="separator_click"></div>
+    {% endif %}
+    <div class="commentbox">
+      <form method="POST" action="/commentpost/{{profileposts.id}}/" enctype="multipart/form-data" style="margin:0;" id="formid">
+        <input class="input-block-level commentinput" id="textbox" type="text" name="profilecomment" maxlength="500" placeholder="Write a comment..." required>
+      </form>
+    </div>
+  </div>
+
+{% endblock %}
+
+{% block extra-js %}
+{% endblock %}

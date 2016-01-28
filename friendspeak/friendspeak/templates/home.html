@@ -1,0 +1,276 @@
+{% extends "base.html" %}
+
+{% block css %}
+{% endblock %}
+
+{% block body %}
+
+<script type='text/javascript' src="/static/js/fbDataRetrieval.js"></script>
+<div id="fb-root"></div>
+
+<!--<button class="btn btn-default sendInviteButton" id="orangebutton">Invite friends!</button>-->
+
+  <form method="POST" action="/post/" enctype="multipart/form-data" style="margin-bottom:0;">
+    <input class="input-block-level lastinput" id="textbox" type="text" name="wallpost" maxlength="225" placeholder="Post anonymously to everyone" required>
+    <div class="buttonbox"><p style="margin:0;text-align:right;"><button class="btn btn-default" id="orangebutton" name="submit" type="submit">Post</button></p></div>
+  </form>
+  {% for w in wallposts %}
+    <div class="box">
+      <div class="boxpost" href="#myModal{{w.id}}" id="getcomments{{w.id}}" data-toggle="modal">
+        <p class="whitetext">{{w.wallpost}}</p>
+        <p class="textal">{{w.timeremoved}} ago</p>
+        <div class="commenticon"><div id="comment_wall_number{{w.id}}"></div></div>
+   <!-- {% if user.username == w.user.username %}
+        <p class="textal"><img class="photo-post" src="/static/images/nick_prof.jpg">{{w.timeremoved}} ago</p>
+        {% else %}
+        <p class="textal">{{w.timeremoved}} ago</p>
+        {% endif %} -->
+      </div>
+      <div class="boxbuttons">
+        <div style="float:right;">
+          <center>
+            <div id="like_wall{{w.id}}"></div>
+            <div id="likes_wall{{w.id}}"></div>
+            <div id="dislike_wall{{w.id}}"></div>
+          </center>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="myModal{{w.id}}" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+      <div class="modal-header">
+        <div class="modalbox">
+          <div class="modalboxpost">
+            <p class="whitetext">{{w.wallpost}}</p>
+            <p class="textal">{{w.timeremoved}} ago</p>
+            <div class="commenticon"><div id="comment_modal_wall_number{{w.id}}"></div></div>
+          </div>
+          <div class="boxbuttons">
+            <div style="float:right;">
+              <center>
+                <div id="like_modal_wall{{w.id}}"></div>
+                <div id="likes_modal_wall{{w.id}}"></div>
+                <div id="dislike_modal_wall{{w.id}}"></div>
+              </center>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div id="comment_wall{{w.id}}"></div>
+      </div>
+      <div class="modal-footer">
+        <!--<img class="photo-mycomment" src="{{myprofileinfo.picture}}">-->
+        <form method="POST" action="/commentwall/{{w.id}}/" enctype="multipart/form-data" style="margin:0;" id="formid{{w.id}}" data-id="{{w.id}}">
+          <input class="input-block-level commentinput commentfocus{{w.id}}" id="textbox" type="text" name="wallcomment" maxlength="500" placeholder="Write a comment..." required>
+        </form>
+      </div>
+    </div>
+  {% endfor %}
+<br><br><br>
+
+{% endblock %}
+
+{% block extra-js %}
+
+<script>
+
+var username = "{{user.username}}";
+var comment_picture = "{{myprofileinfo.picture}}";
+
+{% for w in wallposts %}
+
+$('#getcomments{{w.id}}').click(function() {
+    loadComments({{w.id}});
+});
+
+{% if w.hascomments == True %}
+$('.commentfocus{{w.id}}').focus(function() {
+    loadComments({{w.id}});
+});
+{% endif %}
+
+$('#formid{{w.id}}').live("submit", function(event) {
+    event.preventDefault();
+    $.ajax({
+        url: $('#formid{{w.id}}').attr('action'),
+        type: $('#formid{{w.id}}').attr('method'),
+        data: $('#formid{{w.id}}').serialize(),
+        success: function(data) {
+            loadComments($("#formid{{w.id}}").attr('data-id'));
+            $("#formid{{w.id}} input").val("");
+        }
+    });
+});
+
+$('#like{{w.id}}').live("click", function(event) {
+    event.preventDefault();
+    $.ajax({
+        url: $('#like{{w.id}}').attr('href'),
+        type: 'GET',
+        success: function(data) {
+            loadLike();
+            loadLikes();
+            loadDislike();
+        }
+    });
+});
+
+$('#dislike{{w.id}}').live("click", function(event) {
+    event.preventDefault();
+    $.ajax({
+        url: $('#dislike{{w.id}}').attr('href'),
+        type: 'GET',
+        success: function(data) {
+            loadLike();
+            loadLikes();
+            loadDislike();
+        }
+    });
+});
+
+{% endfor %}
+
+function load() {
+    loadComment();
+    loadLike();
+    loadLikes();
+    loadDislike();
+}
+window.onload = load;
+
+function loadComment() {
+    $.ajax({
+        url: "/ajax/blog/getCommentW",
+        type: "POST",
+        dataType: "json",
+        success: function(data) {
+            if (data["status"] == "OK") {
+                var commentsw = "";
+                var commentsmodalw = "";
+                for (var i = 0; i < data["wallcomment"].length; i++) {
+                    var commentw = data["wallcomment"][i];
+                    var commentw_id = commentw.id;
+                    var commentw_numcomments = commentw.numcomments;
+                    if (commentw_numcomments == 0) {
+                        commentsw = "be the first to comment!";
+                        commentsmodalw = commentw_numcomments + " comments";
+                    }
+                    else if (commentw_numcomments == 1) {
+                        commentsw = commentw_numcomments + " comment";
+                        commentsmodalw = commentw_numcomments + " comment";
+
+                    }
+                    else {
+                        commentsw = commentw_numcomments + " comments";
+                        commentsmodalw = commentw_numcomments + " comments";
+                    }
+                    $('#comment_wall_number' + commentw_id).html(commentsw);
+                    $('#comment_modal_wall_number' + commentw_id).html(commentsmodalw);
+                }
+            }
+        },
+    });
+}
+
+function loadLike() {
+    $.ajax({
+        url: "/ajax/blog/getLikeW",
+        type: "POST",
+        dataType: "json",
+        success: function(data) {
+            if (data["status"] == "OK") {
+                var likesw = "";
+                for (var i = 0; i < data["walllike"].length; i++) {
+                    var likew = data["walllike"][i];
+                    var likew_id = likew.wallid;
+                    var likew_color = likew.color;
+                    likesw = "<p style='margin:0;'><a id='like" + likew_id + "' href='/likewall/" + likew_id + "/'><img src='/static/images/" + likew_color + ".png'></a></p>";
+                    $('#like_wall' + likew_id).html(likesw);
+                    $('#like_modal_wall' + likew_id).html(likesw);
+                }
+            }
+        },
+    });
+}
+
+function loadLikes() {
+    $.ajax({
+        url: "/ajax/blog/getLikesW",
+        type: "POST",
+        dataType: "json",
+        success: function(data) {
+            if (data["status"] == "OK") {
+                var likes = "";
+                for (var i = 0; i < data["walllikes"].length; i++) {
+                    var like = data["walllikes"][i];
+                    var like_id = like.id;
+                    var like_likes = like.likes;
+                    likes = "<p style='margin:0;color:#333333;'>" + like_likes + "</p>";
+                    $('#likes_wall' + like_id).html(likes);
+                    $('#likes_modal_wall' + like_id).html(likes);
+                }
+            }
+        },
+    });
+}
+
+function loadDislike() {
+    $.ajax({
+        url: "/ajax/blog/getDislikeW",
+        type: "POST",
+        dataType: "json",
+        success: function(data) {
+            if (data["status"] == "OK") {
+                var dislikesw = "";
+                for (var i = 0; i < data["walldislike"].length; i++) {
+                    var dislikew = data["walldislike"][i];
+                    var dislikew_id = dislikew.wallid;
+                    var dislikew_color = dislikew.color;
+                    dislikesw = "<p style='margin-top:-3px;margin-bottom:0;'><a id='dislike" + dislikew_id + "' href='/dislikewall/" + dislikew_id + "/'><img src='/static/images/" + dislikew_color + ".png'></a></p>";
+                    $('#dislike_wall' + dislikew_id).html(dislikesw);
+                    $('#dislike_modal_wall' + dislikew_id).html(dislikesw);
+                }
+            }
+        },
+    });
+}
+
+function loadComments(id) {
+    $.ajax({
+        url: "/ajax/blog/getCommentsW",
+        data: ({ id: id }),
+        type: "POST",
+        dataType: "json",
+        success: function(data) {
+            if (data["status"] == "OK") {
+                var comments = "";
+                var total = 0;
+                for (var i = 0; i < data["wallcomments"].length; i++) {
+                    var comment = data["wallcomments"][i];
+                    var comment_user = comment.usercomment;
+                    var comment_comment = comment.wallcomment;
+                    var comment_date = comment.date;
+                    if (username == comment_user) {
+                        comments += "<div class='comments'><div class='commentident' style='display:table-cell;vertical-align:top;'><p style='margin-right:15px;'><img class='photo-comment' src='" + comment_picture + "'></p></div><div class='commentpoop' style='display:inline-block;'><p class='commentpost' style='display:inline-block;'>" + comment_comment + "</p><br><p class='commentdate' style='display:inline-block;'>" + comment_date + " ago</p></div></div><div class='separator'></div>";
+                    }
+                    else {
+                        comments += "<div class='comments'><div class='commentident' style='display:table-cell;vertical-align:top;'><p style='margin-right:15px;'><img class='comment-icon' src='/static/images/comment.png'></p></div><div class='commentpoop' style='display:inline-block;'><p class='commentpost' style='display:inline-block;'>" + comment_comment + "</p><br><p class='commentdate' style='display:inline-block;'>" + comment_date + " ago</p></div></div><div class='separator'></div>";
+                    }
+                    total = total + 1;
+                }
+                if (total > 0) {
+                    $('#comment_wall' + id).html("<div class='commentsbox'>" + comments + "</div>");
+                }
+                else {
+                    $('#comment_wall' + id).html("<p style='color:#bfbfbf;text-align:center;margin-top:120px;'>No comments yet!</p>");
+                }
+                loadComment();
+            }
+        },
+    });
+}
+</script>
+
+{% endblock %}
